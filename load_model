@@ -1,3 +1,3 @@
 import pickle 
 load_model = pickle.load(open('affiliatebot.sav', 'rb')) 
-response=load_model.predict('HP Pavilion')
+response=load_model.predict('your input here')
