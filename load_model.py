@@ -1,5 +1,7 @@
 from transformers import pipeline, set_seed
+import train_model.py
 
+#Generating text using fine-tuned model
 generator = pipeline('text-generation', model="./gpt2-title-desc", tokenizer=tokenizer)
 set_seed(42)
 
