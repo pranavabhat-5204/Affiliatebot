@@ -1,3 +1,4 @@
+#The libraries needed
 !pip install pandas
 !pip install --upgrade pandas datasets huggingface_hub
 !pip install --upgrade transformers
@@ -5,23 +6,28 @@
 import pandas as pd
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import GPT2LMHeadModel, Trainer, TrainingArguments, DataCollatorForLanguageModeling
 
+
+#Loading the dataset and converting it into pandas dataframe
 ds = load_dataset("Studeni/AMAZON-Products-2023")
-dataset={'title':ds['train']['title'][:10], 'description':ds['train']['description'][:10]}
+dataset={'title':ds['train']['title'][:10000], 'description':ds['train']['description'][:10000]}
 df={}
 df['text']=[str(dataset['title'][i])+str(dataset['description'][i]) for i in range(len(dataset['title']))]
 data=pd.DataFrame(df)
 
-model_name = "gpt2" # You can change this to another model like "gpt2-medium", "gpt2-large", etc.
+#Loading the model to be finetuned. We are using the GPT2
+model_name = "gpt2" 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
-from transformers import GPT2LMHeadModel, Trainer, TrainingArguments, DataCollatorForLanguageModeling
 
+#Tokenizing the dataset
 tokenized_dataset = []
 for a in data['text']:
   tokenized_dataset.append(tokenizer(a))
 tokenizer.pad_token = tokenizer.eos_token
 
+#Setting up the training arguments
 training_args = TrainingArguments(
     output_dir="./gpt2-title-desc",
     per_device_train_batch_size=2,
@@ -41,13 +47,16 @@ trainer = Trainer(
     data_collator=data_collator,
 )
 
+#Training and saving the model
 trainer.train()
 trainer.save_model()
 
 #Now an RAG system to retrieve data from additional information
-dataset={'title':ds['train']['title'][11:], 'description':ds['train']['description'][11:]}
+dataset={'title':ds['train']['title'][10001:], 'description':ds['train']['description'][10001:]}
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
+#Creating the corpus of extra information
 corpus=[]
 i=11
 while i<len(dataset['title']):
@@ -56,6 +65,8 @@ while i<len(dataset['title']):
 
 vectorizer = TfidfVectorizer()
 X = vectorizer.fit_transform(corpus)
+
+#retrieving system
 def retrieve_context(query,threshold):
     query_vec = vectorizer.transform([query])
     scores = cosine_similarity(query_vec, X)
@@ -74,6 +85,7 @@ def retrieve_context(query,threshold):
   
 from transformers import pipeline
 
+#Text generation system alson with the model ad RAG system
 generator = pipeline('text-generation', model="./gpt2-title-desc", tokenizer=tokenizer)
 
 def generate_description(title):
