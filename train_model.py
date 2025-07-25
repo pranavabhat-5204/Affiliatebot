@@ -25,7 +25,6 @@ model = AutoModelForCausalLM.from_pretrained(model_name)
 tokenized_dataset = []
 for a in data['text']:
   tokenized_dataset.append(tokenizer(a))
-tokenizer.pad_token = tokenizer.eos_token
 
 #Setting up the training arguments
 training_args = TrainingArguments(
