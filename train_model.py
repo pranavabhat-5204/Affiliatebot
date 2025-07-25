@@ -37,8 +37,6 @@ training_args = TrainingArguments(
     warmup_steps=100,
 )
 
-data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
-
 trainer = Trainer(
     model=model,
     args=training_args,
